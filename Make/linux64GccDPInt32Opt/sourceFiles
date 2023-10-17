@@ -1,0 +1,6 @@
+SOURCE = \
+liftModels/Hessenkemper/Hessenkemper.C \
+wallLubricationModels/Hosokawa/Hosokawa.C \
+wallDampingModels/Shaver/ShaverWallDamping.C \
+
+# sources
