@@ -1,5 +1,4 @@
 liftModels/Hessenkemper/Hessenkemper.C
 wallLubricationModels/Hosokawa/Hosokawa.C
-wallDampingModels/Shaver/ShaverWallDamping.C
 
 LIB = $(FOAM_USER_LIBBIN)/libInterfacialModels
