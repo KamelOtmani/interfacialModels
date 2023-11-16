@@ -1,0 +1,16 @@
+{
+    "files.associations": {
+        "*Dict": "OpenFOAM",
+        "*Properties": "OpenFOAM",
+        "fvSchemes": "OpenFOAM",
+        "fvSolution": "OpenFOAM",
+        "**/constant/g": "OpenFOAM",
+        "**/0/*": "OpenFOAM",
+        "**/0.orig/*": "OpenFOAM",
+        "*.air": "OpenFOAM",
+        "*.water": "OpenFOAM",
+        "kOmegaSSTMa.C": "cpp",
+        "kEpsilonMa.C": "cpp",
+        "BITModels.C": "cpp"
+    }
+}

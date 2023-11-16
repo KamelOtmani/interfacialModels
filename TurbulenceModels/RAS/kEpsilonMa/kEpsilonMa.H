@@ -5,7 +5,7 @@
     \\  /    A nd           | www.openfoam.com
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) 2014-2017 OpenFOAM Foundation
+    Copyright (C) 2013-2016 OpenFOAM Foundation
     Copyright (C) 2019 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
@@ -25,89 +25,47 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::RASModels::kOmegaSSTMa
+    Foam::RASModels::kEpsilonMa
 
 Group
     grpRASTurbulence
 
 Description
-    Implementation of the k-omega-SST turbulence model for dispersed bubbly
-    flows with Ma (1981) bubble induced turbulent viscosity model.
+    Continuous-phase k-epsilon model including bubble-generated turbulence.
 
-    Bubble induced turbulent viscosity model described in:
+    Reference:
     \verbatim
-        Ma, Y., Sadatomi, M.
-        "Momentum and heat transfer in two-phase bubble flow - I, Theory"
-        International Journal of Multiphase FLow 7, pp. 167-177, 1981.
+        Lahey Jr, R. T. (2005).
+        The simulation of multidimensional multiphase flows.
+        Nuclear Engineering and Design, 235(10), 1043-1060.
     \endverbatim
 
-    Turbulence model described in:
+    The default model coefficients are
     \verbatim
-        Menter, F., Esch, T.
-        "Elements of Industrial Heat Transfer Prediction"
-        16th Brazilian Congress of Mechanical Engineering (COBEM),
-        Nov. 2001
-    \endverbatim
-
-    with the addition of the optional F3 term for rough walls from
-    \verbatim
-        Hellsten, A.
-        "Some Improvements in Menter’s k-omega-SST turbulence model"
-        29th AIAA Fluid Dynamics Conference,
-        AIAA-98-2554,
-        June 1998.
-    \endverbatim
-
-    Note that this implementation is written in terms of alpha diffusion
-    coefficients rather than the more traditional sigma (alpha = 1/sigma) so
-    that the blending can be applied to all coefficuients in a consistent
-    manner.  The paper suggests that sigma is blended but this would not be
-    consistent with the blending of the k-epsilon and k-omega models.
-
-    Also note that the error in the last term of equation (2) relating to
-    sigma has been corrected.
-
-    Wall-functions are applied in this implementation by using equations (14)
-    to specify the near-wall omega as appropriate.
-
-    The blending functions (15) and (16) are not currently used because of the
-    uncertainty in their origin, range of applicability and that as y+ becomes
-    sufficiently small blending u_tau in this manner is clearly nonsense.
-
-    The default model coefficients correspond to the following:
-    \verbatim
-        kOmegaSSTCoeffs
+        kEpsilonMaCoeffs
         {
-            alphaK1     0.85034;
-            alphaK2     1.0;
-            alphaOmega1 0.5;
-            alphaOmega2 0.85616;
-            Prt         1.0;    // only for compressible
-            beta1       0.075;
-            beta2       0.0828;
-            betaStar    0.09;
-            gamma1      0.5532;
-            gamma2      0.4403;
-            a1          0.31;
-            b1          1.0;
-            c1          10.0;
-            F3          no;
-            Cmub        0.6;
+            Cmu             0.09;
+            C1              1.44;
+            C2              1.92;
+            C3              -0.33;
+            sigmak          1.0;
+            sigmaEps        1.3;
+            Cp              0.25;
+            Cmub            0.6;
+            alphaInversion  0.3;
         }
     \endverbatim
 
 SourceFiles
-    kOmegaSST.C
-
-SourceFiles
-    kOmegaSSTMa.C
+    kEpsilonMa.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef kOmegaSSTMa_H
-#define kOmegaSSTMa_H
+#ifndef kEpsilonMa_H
+#define kEpsilonMa_H
 
-#include "kOmegaSST.H"
+#include "PhaseCompressibleTurbulenceModel.H"
+#include "kEpsilon.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -117,13 +75,13 @@ namespace RASModels
 {
 
 /*---------------------------------------------------------------------------*\
-                           Class kOmegaSSTMa Declaration
+                           Class kEpsilonMa Declaration
 \*---------------------------------------------------------------------------*/
 
 template<class BasicTurbulenceModel>
-class kOmegaSSTMa
+class kEpsilonMa
 :
-    public kOmegaSST<BasicTurbulenceModel>
+    public kEpsilon<BasicTurbulenceModel>
 {
     // Private data
 
@@ -142,12 +100,11 @@ class kOmegaSSTMa
         >&
         gasTurbulence() const;
 
-
         //- No copy construct
-        kOmegaSSTMa(const kOmegaSSTMa&) = delete;
+        kEpsilonMa(const kEpsilonMa&) = delete;
 
         //- No copy assignment
-        void operator=(const kOmegaSSTMa&) = delete;
+        void operator=(const kEpsilonMa&) = delete;
 
 
 protected:
@@ -156,14 +113,20 @@ protected:
 
         // Model coefficients
 
+            dimensionedScalar alphaInversion_;
+            dimensionedScalar Cp_;
+            dimensionedScalar C3_;
             dimensionedScalar Cmub_;
 
 
     // Protected Member Functions
 
-        virtual void correctNut(const volScalarField& S2);
+        virtual void correctNut();
+        tmp<volScalarField> bubbleG() const;
+        tmp<volScalarField> phaseTransferCoeff() const;
         virtual tmp<fvScalarMatrix> kSource() const;
-        virtual tmp<fvScalarMatrix> omegaSource() const;
+        virtual tmp<fvScalarMatrix> epsilonSource() const;
+
 
 public:
 
@@ -173,13 +136,13 @@ public:
 
 
     //- Runtime type information
-    TypeName("kOmegaSSTMa");
+    TypeName("kEpsilonMa");
 
 
     // Constructors
 
         //- Construct from components
-        kOmegaSSTMa
+        kEpsilonMa
         (
             const alphaField& alpha,
             const rhoField& rho,
@@ -193,7 +156,7 @@ public:
 
 
     //- Destructor
-    virtual ~kOmegaSSTMa() = default;
+    virtual ~kEpsilonMa() = default;
 
 
     // Member Functions
@@ -214,7 +177,7 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #ifdef NoRepository
-    #include "kOmegaSSTMa.C"
+    #include "kEpsilonMa.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

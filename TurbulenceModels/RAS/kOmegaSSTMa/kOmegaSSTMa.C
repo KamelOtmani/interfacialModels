@@ -28,6 +28,7 @@ License
 
 #include "kOmegaSSTMa.H"
 #include "fvOptions.H"
+#include "fvm.H"
 #include "twoPhaseSystem.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -162,50 +163,50 @@ void kOmegaSSTMa<BasicTurbulenceModel>::correctNut
     BasicTurbulenceModel::correctNut();
 }
 
-template <class BasicTurbulenceModel>
-tmp<fvScalarMatrix> kOmegaSSTMa<BasicTurbulenceModel>::kSource() const
-{
-    // return Ck()*dragModel_.K()*magSqr(pair_.Ur());
+// template <class BasicTurbulenceModel>
+// tmp<fvScalarMatrix> kOmegaSSTMa<BasicTurbulenceModel>::kSource() const
+// {
+//     // return Ck()*dragModel_.K()*magSqr(pair_.Ur());
 
-    const alphaField& alpha = this->alpha_;
-    const rhoField& rho = this->rho_;
+//     const alphaField& alpha = this->alpha_;
+//     const rhoField& rho = this->rho_;
 
-    const PhaseCompressibleTurbulenceModel<transportModel>& gasTurbulence =
-        this->gasTurbulence();
+//     const PhaseCompressibleTurbulenceModel<transportModel>& gasTurbulence =
+//         this->gasTurbulence();
 
-    const volScalarField phaseTransferCoeff(this->phaseTransferCoeff());
+//     const volScalarField phaseTransferCoeff(this->phaseTransferCoeff());
 
-    return
-        alpha*rho*bubbleG()
-      + phaseTransferCoeff*gasTurbulence.k()
-      - fvm::Sp(phaseTransferCoeff, this->k_);
-}
+//     return
+//         alpha*rho*bubbleG()
+//       + phaseTransferCoeff*gasTurbulence.k()
+//       - fvm::Sp(phaseTransferCoeff, this->k_);
+// }
 
-template <class BasicTurbulenceModel>
-tmp<fvScalarMatrix> kOmegaSSTMa<BasicTurbulenceModel>::omegaSource() const
-{
-    // return Ceps * k;
-    // Ceps = 
-    // return
-    //     0.3
-    //    *dragModel_.CdRe()
-    //    *pair_.continuous().thermo().nu()
-    //    /sqr(pair_.dispersed().d());
+// template <class BasicTurbulenceModel>
+// tmp<fvScalarMatrix> kOmegaSSTMa<BasicTurbulenceModel>::omegaSource() const
+// {
+//     // return Ceps * k;
+//     // Ceps = 
+//     // return
+//     //     0.3
+//     //    *dragModel_.CdRe()
+//     //    *pair_.continuous().thermo().nu()
+//     //    /sqr(pair_.dispersed().d());
 
     
-    const alphaField& alpha = this->alpha_;
-    const rhoField& rho = this->rho_;
+//     const alphaField& alpha = this->alpha_;
+//     const rhoField& rho = this->rho_;
 
-    const PhaseCompressibleTurbulenceModel<transportModel>& gasTurbulence =
-        this->gasTurbulence();
+//     const PhaseCompressibleTurbulenceModel<transportModel>& gasTurbulence =
+//         this->gasTurbulence();
 
-    const volScalarField phaseTransferCoeff(this->phaseTransferCoeff());
+//     const volScalarField phaseTransferCoeff(this->phaseTransferCoeff());
 
-    return
-        alpha*rho*this->C3_*this->epsilon_*bubbleG()/this->k_
-      + phaseTransferCoeff*gasTurbulence.epsilon()
-      - fvm::Sp(phaseTransferCoeff, this->epsilon_);
-}
+//     return
+//         alpha*rho*this->C3_*this->epsilon_*bubbleG()/this->k_
+//       + phaseTransferCoeff*gasTurbulence.epsilon()
+//       - fvm::Sp(phaseTransferCoeff, this->epsilon_);
+// }
 
 template<class BasicTurbulenceModel>
 void kOmegaSSTMa<BasicTurbulenceModel>::correct()
