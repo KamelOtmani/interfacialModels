@@ -29,3 +29,6 @@ defineTurbulenceModelTypes
 
 #include "RAS/kEpsilonMa/kEpsilonMa.H"
 makeRASModel(kEpsilonMa);
+
+#include "RAS/kEpsilonMagolan/kEpsilonMagolan.H"
+makeRASModel(kEpsilonMagolan);

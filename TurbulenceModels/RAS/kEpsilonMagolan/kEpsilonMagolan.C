@@ -26,7 +26,7 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "kEpsilonMa.H"
+#include "kEpsilonMagolan.H"
 #include "fvOptions.H"
 #include "twoPhaseSystem.H"
 #include "dragModel.H"
@@ -43,7 +43,7 @@ namespace RASModels
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 template<class BasicTurbulenceModel>
-kEpsilonMa<BasicTurbulenceModel>::kEpsilonMa
+kEpsilonMagolan<BasicTurbulenceModel>::kEpsilonMagolan
 (
     const alphaField& alpha,
     const rhoField& rho,
@@ -119,7 +119,7 @@ kEpsilonMa<BasicTurbulenceModel>::kEpsilonMa
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 template<class BasicTurbulenceModel>
-bool kEpsilonMa<BasicTurbulenceModel>::read()
+bool kEpsilonMagolan<BasicTurbulenceModel>::read()
 {
     if (kEpsilon<BasicTurbulenceModel>::read())
     {
@@ -140,7 +140,7 @@ const PhaseCompressibleTurbulenceModel
 <
     typename BasicTurbulenceModel::transportModel
 >&
-kEpsilonMa<BasicTurbulenceModel>::gasTurbulence() const
+kEpsilonMagolan<BasicTurbulenceModel>::gasTurbulence() const
 {
     if (!gasTurbulencePtr_)
     {
@@ -168,16 +168,22 @@ kEpsilonMa<BasicTurbulenceModel>::gasTurbulence() const
 
 
 template<class BasicTurbulenceModel>
-void kEpsilonMa<BasicTurbulenceModel>::correctNut()
+void kEpsilonMagolan<BasicTurbulenceModel>::correctNut()
 {
     const PhaseCompressibleTurbulenceModel<transportModel>& gasTurbulence =
         this->gasTurbulence();
 
+    //TODO: Probably store the ref to the gas phase so we dont need to keep copying this
+    const transportModel& liquid = this->transport();
+    const twoPhaseSystem& fluid = refCast<const twoPhaseSystem>(liquid.fluid());
+    const transportModel& gas = fluid.otherPhase(liquid);
+
     // volScalarField nuBIT = Cmub_*gasTurbulence.transport().d()*gasTurbulence.alpha()
     //    *(mag(this->U_ - gasTurbulence.U()));
-
+    // Cmu_B of Magolan 2018
+    volScalarField CmuMagolan = 1.5 - 0.5 * exp(-10 * gas);
     this->nut_ =
-        this->Cmu_*sqr(this->k_)/this->epsilon_;
+        this->Cmu_*sqr(this->k_)/this->epsilon_ * CmuMagolan;
 
     this->nut_.correctBoundaryConditions();
     fv::options::New(this->mesh_).correct(this->nut_);
@@ -187,7 +193,7 @@ void kEpsilonMa<BasicTurbulenceModel>::correctNut()
 
 
 template<class BasicTurbulenceModel>
-tmp<volScalarField> kEpsilonMa<BasicTurbulenceModel>::bubbleG() const
+tmp<volScalarField> kEpsilonMagolan<BasicTurbulenceModel>::bubbleG() const
 {
     const PhaseCompressibleTurbulenceModel<transportModel>& gasTurbulence =
         this->gasTurbulence();
@@ -204,14 +210,16 @@ tmp<volScalarField> kEpsilonMa<BasicTurbulenceModel>::bubbleG() const
     // Lahey
     // volScalarField kBI = (4.0/(3.0*Cd))*(Cp_*(1+pow(Cd,4.0/3.0)));
     // Ma 2017
-    volScalarField kBI = min(0.18 * pow(Re,0.23),scalar(1)) ;
+    // volScalarField kBI = min(0.18 * Re,scalar(1)) ;
+    // Magolan 2019
+    // volScalarField kBI = scalar(0.34);
 
     tmp<volScalarField> bubbleG
     (
         (3.0/4)*(
             pow3(magUr)
           * Cd
-          * kBI
+          * /*kBI = */0.34
         )
        *gas
        /gas.d()
@@ -222,7 +230,7 @@ tmp<volScalarField> kEpsilonMa<BasicTurbulenceModel>::bubbleG() const
 
 template<class BasicTurbulenceModel>
 tmp<volScalarField>
-kEpsilonMa<BasicTurbulenceModel>::phaseTransferCoeff() const
+kEpsilonMagolan<BasicTurbulenceModel>::phaseTransferCoeff() const
 {
     const volVectorField& U = this->U_;
     const alphaField& alpha = this->alpha_;
@@ -240,7 +248,7 @@ kEpsilonMa<BasicTurbulenceModel>::phaseTransferCoeff() const
 
 
 template<class BasicTurbulenceModel>
-tmp<fvScalarMatrix> kEpsilonMa<BasicTurbulenceModel>::kSource() const
+tmp<fvScalarMatrix> kEpsilonMagolan<BasicTurbulenceModel>::kSource() const
 {
     const alphaField& alpha = this->alpha_;
     const rhoField& rho = this->rho_;
@@ -258,7 +266,7 @@ tmp<fvScalarMatrix> kEpsilonMa<BasicTurbulenceModel>::kSource() const
 
 
 template<class BasicTurbulenceModel>
-tmp<fvScalarMatrix> kEpsilonMa<BasicTurbulenceModel>::epsilonSource() const
+tmp<fvScalarMatrix> kEpsilonMagolan<BasicTurbulenceModel>::epsilonSource() const
 {
     const alphaField& alpha = this->alpha_;
     const rhoField& rho = this->rho_;
@@ -278,7 +286,9 @@ tmp<fvScalarMatrix> kEpsilonMa<BasicTurbulenceModel>::epsilonSource() const
     // Lahey
     // volScalarField Tau = this->k_/this->epsilon_;
     // Ma
-    volScalarField Tau = gas.d()/magUr;
+    // volScalarField Tau = gas.d()/magUr;
+    // Magolan
+    volScalarField Tau = gas.d()*pow(gas,1.0/3.0)/magUr;
 
     return
         alpha*rho*this->C3_*bubbleG()/Tau
@@ -288,7 +298,7 @@ tmp<fvScalarMatrix> kEpsilonMa<BasicTurbulenceModel>::epsilonSource() const
 
 
 template<class BasicTurbulenceModel>
-void kEpsilonMa<BasicTurbulenceModel>::correct()
+void kEpsilonMagolan<BasicTurbulenceModel>::correct()
 {
     kEpsilon<BasicTurbulenceModel>::correct();
 }
