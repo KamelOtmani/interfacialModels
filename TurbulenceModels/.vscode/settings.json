@@ -11,6 +11,8 @@
         "*.water": "OpenFOAM",
         "kOmegaSSTMa.C": "cpp",
         "kEpsilonMa.C": "cpp",
-        "BITModels.C": "cpp"
+        "BITModels.C": "cpp",
+        "dragModel.C": "cpp",
+        "kEpsilonMagolan.C": "cpp"
     }
 }
